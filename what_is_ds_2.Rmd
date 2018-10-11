@@ -1,0 +1,130 @@
+---
+title: "What is DS 2"
+author: "Diana Ballesteros Gonzalez"
+date: "10/9/2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_bw() + theme(legend.position = "bottom"))
+```
+
+## Load Dataset 
+```{r}
+library(p8105.datasets)
+data(nyc_airbnb)
+
+nyc_airbnb
+```
+
+## Rename/Clean some thing 
+```{r}
+nyc_airbnb = 
+  nyc_airbnb %>% 
+  mutate(stars = review_scores_location / 2) %>% 
+  rename(boro = neighbourhood_group)
+```
+
+
+```{r}
+nyc_airbnb %>% 
+  count(boro)
+
+## View allows you to view in a new tab
+nyc_airbnb %>% 
+  count(boro, neighbourhood) %>%  View
+
+```
+
+## Some questions 
+* Does rating vary by niehgborhood, room type, or both? 
+* Hos is price related to other variables? 
+* Where are rentals located? 
+* What is the most expernsive area? What about the least? 
+* Which listing has the most unfilled days?
+* Which are has the highest density of listings? 
+* What are some host characteristics? How many listings? What's associated with ratings? 
+
+```{r}
+nyc_airbnb %>% 
+  group_by(neighbourhood) %>% 
+  summarize(mean_rating_neighborhood = mean(stars, na.rm = TRUE)) %>% 
+  arrange(desc(mean_rating_neighborhood))
+
+nyc_airbnb %>% 
+  group_by(room_type) %>% 
+  summarize(mean_rating_room_type = mean(stars, na.rm = TRUE)) %>% 
+  arrange(mean_rating_room_type)
+
+nyc_airbnb %>% 
+  group_by(neighbourhood, room_type) %>% 
+  summarize(mean_rating = mean(stars, na.rm = TRUE), sd(starts, na.rm = TRUE)) %>% 
+  arrange(desc(neighbourhood)) %>% View
+```
+
+## How is price related to other variables? 
+```{r}
+nyc_airbnb %>% 
+  group_by(neighbourhood) %>% 
+  summarize(mean_price = mean(price, na.rm = TRUE)) %>% 
+  arrange(desc(mean_price))
+
+nyc_airbnb %>% 
+  group_by(boro, room_type) %>% 
+  summarize(mean_price = mean(price, na.rm = TRUE)) %>% 
+  arrange(desc(mean_price)) 
+```
+
+## Where are rentals located? 
+```{r}
+
+library(ggridges)
+library(viridis)
+
+nyc_airbnb %>% 
+  ggplot(aes(x = longitude, y = latitude, color = boro)) + 
+  geom_point() + 
+  scale_color_viridis(discrete = TRUE)
+```
+
+## 
+```{r}
+## Top and Bottom 5 neighborhood prices in BK:
+nyc_airbnb %>%
+ select(boro, neighbourhood, price) %>%
+ filter(boro == "Brooklyn"| boro == "Manhattan") %>%
+ group_by(neighbourhood) %>%
+ summarize(mean_price = mean(price, na.rm = TRUE),
+           median_price = median(price, na.rm = TRUE)) %>% 
+ top_n(-5) %>% View
+
+## =5 gives you the bottom 5 
+nyc_airbnb %>%
+ select(boro, neighbourhood, price) %>%
+ filter(boro == "Manhattan") %>%
+ group_by(neighbourhood) %>%
+ summarize(mean_price = mean(price, na.rm = TRUE),
+           median_price = median(price, na.rm = TRUE)) %>% 
+ top_n(-5) %>% View
+
+nyc_airbnb %>%
+ select(boro, neighbourhood, price) %>%
+ filter(boro == "Brooklyn") %>%
+ group_by(neighbourhood) %>%
+ summarize(mean_price = mean(price, na.rm = TRUE),
+           median_price = median(price, na.rm = TRUE)) %>%
+ top_n(-5) %>% View
+```
+
+## Chloropleoth (look it up)
+
