@@ -1,0 +1,162 @@
+---
+title: "reading_data_from_the_web"
+author: "Diana Ballesteros Gonzalez"
+date: "10/11/2018"
+output: github_document
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(p8105.datasets)
+library(rvest)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_bw() + theme(legend.position = "bottom"))
+```
+
+### Regex
+```{r}
+string_vec = c("my", "name", "is", "jeff")
+
+## Detect will scan through the string vector to look for the pattern 
+str_detect(string_vec, "jeff")
+
+## Will scan trhough and replace it if it finds it 
+str_replace(string_vec, "jeff", "Jeff")
+```
+
+```{r}
+string_vec = c(
+  "i think we all rule for participating",
+  "i think i have been caught",
+  "i think this will be quite fun actually",
+  "it will be fun, i think"
+  )
+
+## If it starts with I think 
+str_detect(string_vec, "^i think")
+
+## If it ends with I think 
+str_detect(string_vec, "i think$")
+
+```
+
+```{r}
+string_vec = c(
+  "Y'all remember Pres. HW Bush?",
+  "I saw a green bush",
+  "BBQ and Bushwalking at Molonglo Gorge",
+  "BUSH!!"
+  )
+
+## You are able to detect capital and lowercase B 
+str_detect(string_vec,"[Bb]ush")
+```
+
+```{r}
+string_vec = c(
+  '7th inning stretch',
+  '1st half soon to begin. Texas won the toss.',
+  'she is 5 feet 4 inches tall',
+  '3AM - cant sleep :('
+  )
+
+## You can get a range of numbers and combine with a letter 
+str_detect(string_vec, "^[0-9][a-zA-Z]")
+```
+
+```{r}
+string_vec = c(
+  'Its 7:11 in the evening',
+  'want to go to 7-11?',
+  'my flight is AA711',
+  'NetBios: scanning ip 203.167.114.66'
+  )
+
+## Scan the number 7 followed by anything then 11, the dot allows you to do that 
+str_detect(string_vec, "7.11")
+```
+
+```{r}
+string_vec = c(
+  'The CI is [2, 5]',
+  ':-]',
+  ':-[',
+  'I found the answer on pages [6-7]'
+  )
+
+str_detect(string_vec, "\\[")
+```
+
+### Pulse Data 
+```{r}
+pulse_data = haven::read_sas("./data/public_pulse_data.sas7bdat") %>%
+  janitor::clean_names() %>%
+  gather(key = visit, value = bdi, bdi_score_bl:bdi_score_12m) %>%
+  mutate(visit = str_replace(visit, "bdi_score_", ""),
+         visit = str_replace(visit, "bl", "00m"),
+         visit = fct_relevel(visit, str_c(c("00", "01", "06", "12"), "m"))) %>%
+  arrange(id, visit)
+
+print(pulse_data, n = 12)
+```
+
+Clean up the imported data...
+
+### NSDUH 
+```{r}
+url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+drug_use_xml = read_html(url)
+
+table_marj = (drug_use_xml %>% html_nodes(css = "table")) %>% 
+  .[[1]] %>%
+  html_table() %>%
+  slice(-1) %>%
+  as_tibble()
+```
+
+```{r}
+data_marj = 
+  table_marj %>%
+  select(-contains("P Value")) %>%
+  gather(key = key, value = percent, -State) %>%
+  separate(key, into = c("age", "year"), sep = "\\(") %>%
+  mutate(year = str_replace(year, "\\)", ""),
+         percent = str_replace(percent, "[a-c]$", ""),
+         percent = as.numeric(percent)) %>%
+  filter(!(State %in% c("Total U.S.", "Northeast", "Midwest", "South", "West")))
+```
+
+Now that we have tidy data, we can make some plots...
+```{r}
+data_marj %>%
+  filter(age == "12-17") %>% 
+  mutate(State = fct_reorder(State, percent)) %>% 
+  ggplot(aes(x = State, y = percent, color = year)) + 
+    geom_point() + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+### Tooth brush reviews 
+```{r}
+url_base = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber="
+
+urls = str_c(url_base, 1:5)
+
+read_html(urls[1]) %>% 
+  html_nodes("#cm_cr-review_list .review-title") %>%
+  html_text()
+
+read_html(urls[2]) %>% 
+  html_nodes("#cm_cr-review_list .review-title") %>%
+  html_text()
+
+```
+
