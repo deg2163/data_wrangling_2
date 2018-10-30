@@ -32,10 +32,16 @@ drug_use_xml
 
 Get the tables from the html 
 ```{r}
+
+## Allows you to extract the tables 
+drug_use_xml %>%
+  html_nodes(css = "table")
+
+## Allows you to extract the first table only 
 drug_use_xml %>%
   html_nodes(css = "table") %>% 
   .[[1]] %>% 
-  html_table() %>% View()
+  html_table() 
 
 ## Slice let's you access rows by number (-1 removes the first row)
 drug_use_xml %>%
@@ -48,40 +54,39 @@ drug_use_xml %>%
 
 ## Learning Assessment 
 ```{r}
-
+## Header = TRUE allows you to keep the header 
 nyc_cost_xml = 
   read_html("https://www.bestplaces.net/cost_of_living/city/new_york/new_york") %>%
   html_nodes(css = "table") %>% 
   .[[1]] %>% 
-  html_table(header = TRUE) %>% 
-  View()
+  html_table(header = TRUE) 
 ```
 
 ## Harry Potter: CSS Selectors 
 ```{r}
-hpsaga_html = read_html("https://www.imdb.com/list/ls000630791/") 
-## Add as_tible() to export as a table 
-titles = hpsaga_html %>%
-html_nodes(css = ".lister-item-header a") %>% 
-html_text() %>% 
-  as_tibble()
+## For each element, I’ll use the CSS selector in html_nodes() to extract the relevant HTML code, and convert it to text. Then I can combine these into a data frame.
 
-  gross_rev_vec = hpsaga_html %>%
-  html_nodes(".ghost~ .text-muted+ span , .lister-item-header a") %>%
-  html_text() %>% 
-  as_tibble()
+## Load in the data 
+hpsaga_html = read_html("https://www.imdb.com/list/ls000630791/") 
+
+## Add as_tible() to export as a table 
+title_vec = hpsaga_html %>%
+  html_nodes(css = ".lister-item-header a") %>% 
+  html_text() 
+
+gross_rev_vec = hpsaga_html %>%
+  html_nodes(".text-small:nth-child(7) span:nth-child(5)") %>%
+  html_text()
   
 runtime_vec = hpsaga_html %>%
   html_nodes(".runtime") %>%
-  html_text()
+  html_text() 
 
 hpsaga_df = tibble(
   title = title_vec,
   rev = gross_rev_vec,
   runtime = runtime_vec
 )
-  
-  
 ```
 
 ## Learning Assessment
@@ -110,7 +115,6 @@ reviews = tibble(
 
 ```
 
-
 ## Using an API
 ```{r}
 ## Get the NYC Data - Water Consumption as .csv
@@ -125,7 +129,6 @@ nyc_water = GET("https://data.cityofnewyork.us/resource/waf7-5gvc.json") %>%
   jsonlite::fromJSON() %>%
   as_tibble()
 ```
-
 
 BRFSS 2010
 ```{r}
