@@ -85,6 +85,8 @@ str_detect(string_vec, "7.11")
 ```
 
 ```{r}
+## Some characters are “special”. These include [ and ], ( and ), and .. If you want to search for these, you have to indicate they’re special using \. Unfortunately, \ is also special, so things get weird.
+
 string_vec = c(
   'The CI is [2, 5]',
   ':-]',
@@ -96,6 +98,8 @@ str_detect(string_vec, "\\[")
 ```
 
 ### Pulse Data 
+
+Tidy the pulse data set! 
 ```{r}
 pulse_data = haven::read_sas("./data/public_pulse_data.sas7bdat") %>%
   janitor::clean_names() %>%
@@ -136,6 +140,7 @@ data_marj =
 
 Now that we have tidy data, we can make some plots...
 ```{r}
+## Automatically will order the x-axis by alphabetical order 
 data_marj %>%
   filter(age == "12-17") %>% 
   mutate(State = fct_reorder(State, percent)) %>% 
@@ -148,6 +153,7 @@ data_marj %>%
 ```{r}
 url_base = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber="
 
+## Gives you the reviews from pages 1 through 5 
 urls = str_c(url_base, 1:5)
 
 read_html(urls[1]) %>% 
@@ -172,6 +178,7 @@ vec_sex
 as.numeric(vec_sex)
 ```
 
+## Weather Data
 ```{r}
 weather_df = 
   rnoaa::meteo_pull_monitors(c("USW00094728", "USC00519397", "USS0023B17S"),
@@ -188,6 +195,39 @@ weather_df =
 weather_df
 ```
 
+```{r}
+weather_df %>% 
+  mutate(name = factor(name)) 
+  ## %>% pull(name) allows you to pull out those names 
+```
+
+```{r}
+## Factor relevel 
+weather_df %>%
+  mutate(name = forcats::fct_relevel(name, c("Waikiki_HA", "CentralPark_NY", "Waterhole_WA"))) %>% 
+  ggplot(aes(x = name, y = tmax)) + 
+  geom_violin(aes(fill = name), color = "blue", alpha = .5) + 
+  theme(legend.position = "bottom")
+```
+
+```{r}
+## Factor reorder 
+weather_df %>%
+  mutate(name = forcats::fct_reorder(name, tmax)) %>% 
+  ggplot(aes(x = name, y = tmax)) + 
+  geom_violin(aes(fill = name), color = "blue", alpha = .5) + 
+  theme(legend.position = "bottom")
+```
+
+```{r}
+weather_df %>%
+  lm(tmax ~ name, data = .)
+
+weather_df %>%
+  mutate(name = forcats::fct_relevel(name, c("Waikiki_HA", "CentralPark_NY", "Waterhole_WA"))) %>% 
+  lm(tmax ~ name, data = .)
+```
+
 ### Restaurant Inspections 
 ```{r}
 data(rest_inspec)
@@ -197,13 +237,20 @@ rest_inspec %>%
   summarize(n = n()) %>% 
   spread(key = grade, value = n)
 
+```
+
+Make my life easy by filtering!! 
+
+```{r}
 rest_inspec =
   rest_inspec %>%
   filter(grade %in% c("A", "B", "C"), boro != "Missing") %>% 
   mutate(boro = str_to_title(boro))
 ```
 
+Pizza places
 ```{r}
+## Looking ofr capital P in Pizza 
 rest_inspec %>% 
   filter(str_detect(dba, "Pizza")) %>% 
   group_by(boro, grade) %>% 
@@ -213,6 +260,7 @@ rest_inspec %>%
 
 ˆ
 ```{r}
+## Any version of pizza 
 rest_inspec %>% 
   filter(str_detect(dba, "[Pp][Ii][Zz][Zz][Aa]")) %>% 
   group_by(boro, grade) %>% 
@@ -221,9 +269,7 @@ rest_inspec %>%
 ```
 
 ```{r}
-
-install.packages("viridis")
-library(virdis)
+library(viridis)
 
 rest_inspec %>% 
   filter(str_detect(dba, "[Pp][Ii][Zz][Zz][Aa]")) %>%
@@ -232,7 +278,10 @@ rest_inspec %>%
   scale_fill_viridis(discrete = TRUE)
 ```
 
+Reorder...
+
 ```{r}
+## infreq tells you the order in which they appear 
 rest_inspec %>% 
   filter(str_detect(dba, "[Pp][Ii][Zz][Zz][Aa]")) %>%
   mutate(boro = fct_infreq(boro)) %>%
@@ -240,6 +289,17 @@ rest_inspec %>%
   geom_bar() + 
   scale_fill_viridis(discrete = TRUE)
 ```
+
+Relevel with Staten Island First 
+```{r}
+rest_inspec %>% 
+  filter(str_detect(dba, "[Pp][Ii][Zz][Zz][Aa]")) %>%
+  mutate(boro = fct_relevel(boro, "Staten Island")) %>%
+  ggplot(aes(x = boro, fill = grade)) + 
+  geom_bar() + 
+  scale_fill_viridis(discrete = TRUE)
+```
+
 
 ```{r}
 rest_inspec %>% 
@@ -251,7 +311,7 @@ rest_inspec %>%
   scale_fill_viridis(discrete = TRUE)
 ```
 
-Really change factor value...
+Really change factor value...recode instead of replace 
 ```{r}
 rest_inspec %>% 
   filter(str_detect(dba, regex("pizza", ignore_case = TRUE))) %>%
@@ -262,13 +322,15 @@ rest_inspec %>%
   scale_fill_viridis(discrete = TRUE)
 ```
 
+Look them up because there are a lot of other cool functions: 
+- stringr packages 
+- forcats packages 
 
 We have the forcats package the string package 
 
 recode vs replace 
 recode = 
 replace = 
-
 
 Midterm notes: 
 - Less structured than HW 
